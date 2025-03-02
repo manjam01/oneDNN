@@ -21,6 +21,17 @@ namespace impl {
 namespace cpu {
 namespace aarch64 {
 
+status_t acl_layer_normalization_fwd_t::execute(const exec_ctx_t &ctx) const {
+    return execute_forward(ctx);
+}
+
+status_t acl_layer_normalization_fwd_t::init(engine_t *engine) {
+    auto aep = pd()->anp;
+    acl_obj.get()->configure(
+            &aep.data_info, &aep.data_info, desc()->layer_norm_epsilon);
+    return status::success;
+}
+
 status_t acl_layer_normalization_fwd_t::execute_forward(
         const exec_ctx_t &ctx) const {
 
@@ -35,7 +46,22 @@ status_t acl_layer_normalization_fwd_t::execute_forward(
     acl_msdnorm_obj_t &acl_obj = acl_resource->get_acl_obj();
 
     auto src = CTX_IN_MEM(const float *, DNNL_ARG_SRC);
-    acl_obj.src_tensor.allocator()->import_memory(const_cast<float *>(src));
+
+    arm_compute::Tensor data_tensor;
+
+    auto const acp = pd()->anp;
+
+    data_tensor.allocator()->init(acp.data_info);
+
+    data_tensor.allocator()->import_memory(const_cast<float *>(src));
+
+    arm_compute::Tensor data_tensor;
+
+    auto const acp = pd()->anp;
+
+    data_tensor.allocator()->init(acp.data_info);
+
+    data_tensor.allocator()->import_memory(const_cast<float *>(src));
 
     auto dst = CTX_OUT_MEM(float *, DNNL_ARG_DST);
     acl_obj.dst_tensor.allocator()->import_memory(dst);
